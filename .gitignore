@@ -11,6 +11,7 @@ env/
 .pytest_cache/
 .pytest_*/
 .github-publish/
+.git-legacy/
 .coverage
 htmlcov/
 *.log
