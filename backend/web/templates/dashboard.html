@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Tổng quan · SPS{% endblock %}
+
+{% block content %}
+  <h1 class="h2 mb-4">Xin chào, {{ session.get("username") }} ({{ session.get("role") }}).</h1>
+
+  <div class="row g-3 mb-4">
+    <div class="col-md-4">
+      <div class="card h-100"><div class="card-body">
+        <h2 class="h6 text-muted">Sức chứa</h2>
+        <p class="display-6 mb-0" id="capacity-total">{{ capacity.capacity_total }}</p>
+      </div></div>
+    </div>
+    <div class="col-md-4">
+      <div class="card h-100"><div class="card-body">
+        <h2 class="h6 text-muted">Đang sử dụng</h2>
+        <p class="display-6 mb-0" id="capacity-occupied">{{ capacity.occupied }}</p>
+      </div></div>
+    </div>
+    <div class="col-md-4">
+      <div class="card h-100"><div class="card-body">
+        <h2 class="h6 text-muted">Còn trống</h2>
+        <p class="display-6 mb-0" id="capacity-free">{{ capacity.free }}</p>
+      </div></div>
+    </div>
+    <div class="col-md-4">
+      <div class="card h-100"><div class="card-body">
+        <h2 class="h6 text-muted">Cảnh báo chưa xử lý</h2>
+        <p class="display-6 mb-0" id="open-alerts">{{ open_alerts }}</p>
+      </div></div>
+    </div>
+  </div>
+
+  <section>
+    <h2 class="h4 mb-3">Mở cổng từ xa</h2>
+    <div class="d-flex gap-2 mb-4">
+      <form method="post" action="{{ url_for('main.gate_open') }}"><input type="hidden" name="gate" value="in"><button class="btn btn-outline-primary" type="submit">Mở cổng vào</button></form>
+      <form method="post" action="{{ url_for('main.gate_open') }}"><input type="hidden" name="gate" value="out"><button class="btn btn-outline-primary" type="submit">Mở cổng ra</button></form>
+    </div>
+    <h2 class="h4 mb-3">Sự kiện gần đây có ảnh</h2>
+    <div id="recent-events">{% include "_dashboard_events.html" %}</div>
+  </section>
+  <script>
+    (function refreshDashboardStatus() {
+      let lastEventsHtml = null;
+      async function update() {
+        try {
+          const response = await fetch("{{ url_for('main.dashboard_status') }}", {
+            credentials: "same-origin",
+            cache: "no-store"
+          });
+          if (!response.ok) return;
+          const data = await response.json();
+          document.getElementById("capacity-total").textContent = data.capacity.capacity_total;
+          document.getElementById("capacity-occupied").textContent = data.capacity.occupied;
+          document.getElementById("capacity-free").textContent = data.capacity.free;
+          document.getElementById("open-alerts").textContent = data.open_alerts;
+          const events = document.getElementById("recent-events");
+          if (lastEventsHtml !== data.events_html) {
+            events.innerHTML = data.events_html;
+            lastEventsHtml = data.events_html;
+          }
+        } catch (_) {
+          // Keep the last displayed values while the server is unavailable.
+        }
+      }
+      window.setInterval(update, 2000);
+    })();
+  </script>
+{% endblock %}

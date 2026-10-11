@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}Đăng nhập · SPS{% endblock %}
+
+{% block content %}
+  <div class="login-card card shadow-sm">
+    <div class="card-body p-4">
+      <h1 class="h3 mb-4 text-center">Đăng nhập SPS</h1>
+      {% if error %}
+        <div class="alert alert-danger" role="alert">{{ error }}</div>
+      {% endif %}
+      <form method="post" action="{{ url_for('auth.login') }}">
+        <div class="mb-3">
+          <label class="form-label" for="username">Tên đăng nhập</label>
+          <input class="form-control" id="username" name="username" required autofocus>
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="password">Mật khẩu</label>
+          <input class="form-control" id="password" name="password" type="password" required>
+        </div>
+        <button class="btn btn-primary w-100" type="submit">Đăng nhập</button>
+      </form>
+    </div>
+  </div>
+{% endblock %}

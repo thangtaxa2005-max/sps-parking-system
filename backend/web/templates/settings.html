@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Cài đặt · SPS{% endblock %}
+{% block content %}
+  <h1 class="h2 mb-4">Cài đặt hệ thống</h1>
+  <form method="post" class="card card-body" style="max-width: 36rem">
+    <label class="form-label" for="capacity_total">Sức chứa tổng</label>
+    <input class="form-control mb-3" id="capacity_total" name="capacity_total" type="number" min="1" max="10000" required value="{{ settings.get('capacity_total', '') }}">
+    <label class="form-label" for="default_quota_car">Hạn mức ô tô mặc định</label>
+    <input class="form-control mb-3" id="default_quota_car" name="default_quota_car" type="number" min="0" required value="{{ settings.get('default_quota_car', '') }}">
+    <label class="form-label" for="default_quota_moto">Hạn mức xe máy mặc định</label>
+    <input class="form-control mb-3" id="default_quota_moto" name="default_quota_moto" type="number" min="0" required value="{{ settings.get('default_quota_moto', '') }}">
+    <label class="form-label" for="ocr_threshold">Ngưỡng OCR (0–1)</label>
+    <input class="form-control mb-3" id="ocr_threshold" name="ocr_threshold" type="number" min="0" max="1" step="0.01" required value="{{ settings.get('ocr_threshold', '') }}">
+    <button class="btn btn-primary" type="submit">Lưu cài đặt</button>
+  </form>
+{% endblock %}

@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.env
+.env.*
+!.env.example
+.pytest_cache/
+.pytest_*/
+.github-publish/
+.coverage
+htmlcov/
+*.log
+
+# Database & data
+data/
+*.db
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
+
+# Firmware
+firmware/.pio/
+firmware/.vscode/
+firmware/sps_esp32/secrets.h
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+# Model files (large, not tracked)
+models/

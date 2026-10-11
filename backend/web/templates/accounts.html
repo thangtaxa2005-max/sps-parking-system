@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Cư dân · SPS{% endblock %}
+{% block content %}
+  <h1 class="h2 mb-4">Căn hộ và tài khoản cư dân</h1>
+  <form method="post" action="{{ url_for('main.account_create_unit') }}" class="card card-body mb-4" style="max-width: 42rem">
+    <h2 class="h5">Tạo căn hộ</h2>
+    <label class="form-label" for="unit-code">Mã căn hộ</label>
+    <input class="form-control" id="unit-code" name="unit_code" required>
+    <button class="btn btn-outline-primary mt-3" type="submit">Lưu căn hộ</button>
+  </form>
+  <form method="post" action="{{ url_for('main.account_create_resident') }}" class="card card-body mb-4" style="max-width: 42rem">
+    <h2 class="h5">Tạo tài khoản</h2>
+    <div class="row g-2"><div class="col-md-4"><label class="form-label">Căn hộ</label><select class="form-select" name="unit_id" required>{% for unit in units %}<option value="{{ unit.id }}">{{ unit.unit_code }}</option>{% endfor %}</select></div>
+    <div class="col-md-4"><label class="form-label">Tên đăng nhập</label><input class="form-control" name="username" required></div>
+    <div class="col-md-4"><label class="form-label">Mật khẩu</label><input class="form-control" name="password" minlength="6" required></div></div>
+    <button class="btn btn-primary mt-3" type="submit">Tạo cư dân</button>
+  </form>
+  <div class="table-responsive"><table class="table table-striped align-middle"><thead><tr><th>Tài khoản</th><th>Vai trò</th><th>Căn hộ</th><th>Telegram</th><th>Thao tác</th></tr></thead><tbody>
+  {% for user in users %}<tr><td>{{ user.username }}</td><td>{{ user.role }}</td><td>{{ user.unit_code or '—' }}</td><td>{{ 'Đã liên kết' if user.telegram_chat_id else 'Chưa liên kết' }}</td><td>{% if user.role == 'resident' %}<div class="d-flex gap-1"><form method="post" action="{{ url_for('main.account_telegram_code', user_id=user.id) }}"><button class="btn btn-sm btn-outline-primary" type="submit">Tạo mã</button></form>{% if user.telegram_chat_id %}<form method="post" action="{{ url_for('main.account_test_notification', user_id=user.id) }}"><button class="btn btn-sm btn-outline-success" type="submit">Gửi thông báo thử</button></form>{% endif %}<form method="post" action="{{ url_for('main.account_unlink_telegram', user_id=user.id) }}"><button class="btn btn-sm btn-outline-danger" type="submit">Hủy liên kết</button></form></div>{% endif %}</td></tr>{% endfor %}
+  </tbody></table></div>
+{% endblock %}

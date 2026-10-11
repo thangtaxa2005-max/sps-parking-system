@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% block title %}Xe và thẻ - SPS{% endblock %}
+{% block content %}
+  <h1 class="mb-4">Xe và thẻ</h1>
+  {% if enroll_state %}
+    <div class="alert alert-warning d-flex justify-content-between align-items-center">
+      <span>Đang cấp thẻ tại cổng <strong>{{ enroll_state.gate }}</strong> — còn <strong data-enroll-countdown>...</strong></span>
+      <form method="post" action="{{ url_for('main.enroll_clear') }}">
+        <input type="hidden" name="next" value="vehicles">
+        <button class="btn btn-sm btn-outline-dark" type="submit">Hủy cấp thẻ</button>
+      </form>
+    </div>
+  {% endif %}
+  {% if vehicles %}
+    <div class="table-responsive">
+      <table class="table table-striped align-middle">
+        <thead>
+          <tr>
+            <th>Biển số</th>
+            <th>Loại</th>
+            <th>Căn hộ</th>
+            <th>Hạn gói</th>
+            <th>Trạng thái</th>
+            <th>Thẻ</th>
+            <th>Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in vehicles %}
+            {% set vehicle = item["vehicle"] %}
+            <tr>
+              <td>{{ vehicle["plate"] }}</td>
+              <td>{{ "Ô tô" if vehicle["vehicle_type"] == "car" else "Xe máy" }}</td>
+              <td>{{ item["unit_code"] }}</td>
+              <td>{{ vehicle["plan_expires_at"] | format_date }}</td>
+              <td>
+                {% if vehicle["in_lot"] %}
+                  <span class="badge bg-success">Trong bãi</span>
+                {% else %}
+                  <span class="badge bg-secondary">Ngoài bãi</span>
+                {% endif %}
+              </td>
+              <td>
+                {% for credential in item["credentials"] %}
+                  {% if credential["status"] == "active" %}
+                    {% set badge_class = "bg-success" %}
+                  {% elif credential["status"] == "locked" %}
+                    {% set badge_class = "bg-warning text-dark" %}
+                  {% else %}
+                    {% set badge_class = "bg-danger" %}
+                  {% endif %}
+                  <span
+                    class="badge {{ badge_class }} mb-1"
+                    title="Cấp ngày {{ credential['issued_at'] | format_datetime }}"
+                  >{{ credential["value"] }} - {{ credential["status"] }}</span>
+                {% else %}
+                  <span class="text-muted">Chưa có thẻ</span>
+                {% endfor %}
+              </td>
+              <td>
+                <div class="d-flex flex-wrap gap-1">
+                  <button
+                    class="btn btn-primary btn-sm"
+                    type="button"
+                    data-bs-toggle="modal"
+                    data-bs-target="#extendModal-{{ vehicle['id'] }}"
+                  >Gia hạn</button>
+                  <form method="post" action="{{ url_for('main.vehicle_occupancy', vehicle_id=vehicle['id']) }}">
+                    <input type="hidden" name="in_lot" value="{{ 0 if vehicle['in_lot'] else 1 }}">
+                    <button class="btn btn-outline-secondary btn-sm" type="submit">
+                      {{ "Đánh dấu đã ra" if vehicle['in_lot'] else "Đánh dấu đã vào" }}
+                    </button>
+                  </form>
+                  <form method="post" action="{{ url_for('main.enroll_start') }}">
+                    <input type="hidden" name="vehicle_id" value="{{ vehicle['id'] }}">
+                    <input type="hidden" name="next" value="vehicles">
+                    <input type="hidden" name="gate" value="in">
+                    <button class="btn btn-info btn-sm" type="submit">Cấp thẻ</button>
+                  </form>
+                  {% for credential in item["credentials"] %}
+                    {% if credential["status"] == "active" %}
+                      <form
+                        method="post"
+                        action="{{ url_for('main.vehicle_credential_lock', vehicle_id=vehicle['id'], credential_id=credential['id']) }}"
+                      >
+                        <button class="btn btn-warning btn-sm" type="submit">Khóa</button>
+                      </form>
+                      <form
+                        method="post"
+                        action="{{ url_for('main.vehicle_credential_mark_lost', vehicle_id=vehicle['id'], credential_id=credential['id']) }}"
+                      >
+                        <button class="btn btn-outline-danger btn-sm" type="submit">Báo mất</button>
+                      </form>
+                    {% elif credential["status"] == "locked" %}
+                      <form
+                        method="post"
+                        action="{{ url_for('main.vehicle_credential_unlock', vehicle_id=vehicle['id'], credential_id=credential['id']) }}"
+                      >
+                        <button class="btn btn-success btn-sm" type="submit">Mở</button>
+                      </form>
+                      <form
+                        method="post"
+                        action="{{ url_for('main.vehicle_credential_mark_lost', vehicle_id=vehicle['id'], credential_id=credential['id']) }}"
+                      >
+                        <button class="btn btn-outline-danger btn-sm" type="submit">Báo mất</button>
+                      </form>
+                    {% endif %}
+                  {% endfor %}
+                </div>
+
+                <div
+                  class="modal fade"
+                  id="extendModal-{{ vehicle['id'] }}"
+                  tabindex="-1"
+                  aria-labelledby="extendModalLabel-{{ vehicle['id'] }}"
+                  aria-hidden="true"
+                >
+                  <div class="modal-dialog">
+                    <div class="modal-content">
+                      <form
+                        method="post"
+                        action="{{ url_for('main.vehicle_extend', vehicle_id=vehicle['id']) }}"
+                      >
+                        <div class="modal-header">
+                          <h2 class="modal-title fs-5" id="extendModalLabel-{{ vehicle['id'] }}">
+                            Gia hạn gói - {{ vehicle["plate"] }}
+                          </h2>
+                          <button
+                            type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Đóng"
+                          ></button>
+                        </div>
+                        <div class="modal-body">
+                          <p>Hạn hiện tại: {{ vehicle["plan_expires_at"] | format_date }}</p>
+                          <label class="form-label" for="months-{{ vehicle['id'] }}">Thời hạn gia hạn</label>
+                          <select class="form-select" id="months-{{ vehicle['id'] }}" name="months" required>
+                            <option value="1">1 tháng</option>
+                            <option value="3">3 tháng</option>
+                            <option value="6">6 tháng</option>
+                            <option value="12">1 năm</option>
+                          </select>
+                        </div>
+                        <div class="modal-footer">
+                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                          <button type="submit" class="btn btn-primary">Xác nhận gia hạn</button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p>Chưa có xe nào.</p>
+  {% endif %}
+  {% if enroll_state %}
+    <script>
+      (() => {
+        const expiry = new Date({{ enroll_state.expires_at|tojson }}).getTime();
+        const nodes = document.querySelectorAll('[data-enroll-countdown]');
+        const tick = () => {
+          const seconds = Math.max(0, Math.ceil((expiry - Date.now()) / 1000));
+          nodes.forEach((node) => { node.textContent = `${seconds}s`; });
+          if (seconds > 0) window.setTimeout(tick, 250);
+        };
+        tick();
+      })();
+    </script>
+  {% endif %}
+{% endblock %}

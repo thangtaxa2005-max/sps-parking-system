@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Cảnh báo · SPS{% endblock %}
+{% block content %}
+  <h1 class="h2 mb-4">Cảnh báo chưa xử lý</h1>
+  {% if alerts %}
+    <div class="table-responsive"><table class="table table-striped align-middle">
+      <thead><tr><th>Thời gian</th><th>Nội dung</th><th>Mức</th><th>Thao tác</th></tr></thead>
+      <tbody>{% for alert in alerts %}
+        <tr>
+          <td>{{ alert.created_at | format_datetime }}</td>
+          <td>{{ alert.content }}</td>
+          <td><span class="badge bg-danger">{{ alert.level }}</span></td>
+          <td>
+            <form method="post" action="{{ url_for('main.alert_resolve', alert_id=alert.id) }}">
+              <button class="btn btn-sm btn-outline-success" type="submit">Đã xử lý</button>
+            </form>
+            {% if vehicles %}
+              <details class="mt-2">
+                <summary>Sửa trạng thái và mở cổng</summary>
+                <form method="post" action="{{ url_for('main.alert_correct_and_open', alert_id=alert.id) }}" class="d-grid gap-2 mt-2">
+                  <label>Xe
+                    <select class="form-select form-select-sm" name="vehicle_id" required>
+                      <option value="">Chọn xe</option>
+                      {% for item in vehicles %}<option value="{{ item.vehicle.id }}">{{ item.vehicle.plate }}</option>{% endfor %}
+                    </select>
+                  </label>
+                  <label>Trạng thái sau sửa
+                    <select class="form-select form-select-sm" name="in_lot" required>
+                      <option value="1">Trong bãi</option>
+                      <option value="0">Ngoài bãi</option>
+                    </select>
+                  </label>
+                  <label>Cổng cần mở
+                    <select class="form-select form-select-sm" name="gate" required>
+                      <option value="in">Cổng vào</option>
+                      <option value="out">Cổng ra</option>
+                    </select>
+                  </label>
+                  <button class="btn btn-sm btn-warning" type="submit">Xác nhận sửa và mở cổng</button>
+                </form>
+              </details>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}</tbody>
+    </table></div>
+  {% else %}<p class="text-muted">Không có cảnh báo chưa xử lý.</p>{% endif %}
+{% endblock %}

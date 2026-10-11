@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block title %}Yêu cầu đăng ký · SPS{% endblock %}
+
+{% block content %}
+  <h1 class="h2 mb-4">Yêu cầu đăng ký</h1>
+
+  <ul class="nav nav-pills mb-4">
+    <li class="nav-item">
+      <a
+        class="nav-link {{ 'active' if not show_approved else '' }}"
+        href="{{ url_for('main.requests_list') }}"
+      >Chờ duyệt</a>
+    </li>
+    <li class="nav-item">
+      <a
+        class="nav-link {{ 'active' if show_approved else '' }}"
+        href="{{ url_for('main.requests_list', show='approved') }}"
+      >Đã duyệt (chờ cấp thẻ)</a>
+    </li>
+  </ul>
+
+  {% if show_approved %}
+    {% if enroll_state %}
+      <div class="alert alert-warning d-flex justify-content-between align-items-center">
+        <span>Đang chờ quẹt thẻ tại cổng <strong>{{ enroll_state.gate }}</strong> — còn <strong data-enroll-countdown>...</strong></span>
+        <form method="post" action="{{ url_for('main.enroll_clear') }}">
+          <input type="hidden" name="next" value="requests">
+          <button class="btn btn-sm btn-outline-dark" type="submit">Hủy cấp thẻ</button>
+        </form>
+      </div>
+    {% else %}
+      <p class="text-muted">Chọn “Cấp thẻ” rồi quẹt thẻ tại cổng tương ứng.</p>
+    {% endif %}
+  {% endif %}
+
+  {% if requests %}
+    <div class="table-responsive">
+      <table class="table table-striped align-middle">
+        <thead>
+          <tr>
+            <th>Căn hộ</th>
+            <th>Biển số</th>
+            <th>Loại xe</th>
+            <th>Gói</th>
+            <th>Ngày gửi</th>
+            <th>Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for registration_request in requests %}
+            <tr>
+              <td>{{ registration_request.unit_code }}</td>
+              <td>{{ registration_request.plate }}</td>
+              <td>{{ "Ô tô" if registration_request.vehicle_type == "car" else "Xe máy" }}</td>
+              <td>{{ registration_request.plan_type }}</td>
+              <td>{{ registration_request.created_at }}</td>
+              <td>
+                {% if not show_approved %}
+                  <div class="d-flex flex-wrap gap-2">
+                    <form
+                      method="post"
+                      action="{{ url_for('main.request_approve', request_id=registration_request.id) }}"
+                    >
+                      <button class="btn btn-success btn-sm" type="submit">Duyệt</button>
+                    </form>
+                    <button
+                      class="btn btn-outline-danger btn-sm"
+                      type="button"
+                      data-bs-toggle="modal"
+                      data-bs-target="#rejectRequest{{ registration_request.id }}"
+                    >Từ chối</button>
+                  </div>
+
+                  <div
+                    class="modal fade"
+                    id="rejectRequest{{ registration_request.id }}"
+                    tabindex="-1"
+                    aria-labelledby="rejectRequestLabel{{ registration_request.id }}"
+                    aria-hidden="true"
+                  >
+                    <div class="modal-dialog">
+                      <div class="modal-content">
+                        <form
+                          method="post"
+                          action="{{ url_for('main.request_reject', request_id=registration_request.id) }}"
+                        >
+                          <div class="modal-header">
+                            <h2
+                              class="modal-title fs-5"
+                              id="rejectRequestLabel{{ registration_request.id }}"
+                            >Từ chối yêu cầu {{ registration_request.plate }}</h2>
+                            <button
+                              class="btn-close"
+                              type="button"
+                              data-bs-dismiss="modal"
+                              aria-label="Đóng"
+                            ></button>
+                          </div>
+                          <div class="modal-body">
+                            <label
+                              class="form-label"
+                              for="reason{{ registration_request.id }}"
+                            >Lý do từ chối</label>
+                            <input
+                              class="form-control"
+                              id="reason{{ registration_request.id }}"
+                              name="reason"
+                              required
+                            >
+                          </div>
+                          <div class="modal-footer">
+                            <button
+                              class="btn btn-secondary"
+                              type="button"
+                              data-bs-dismiss="modal"
+                            >Hủy</button>
+                            <button class="btn btn-danger" type="submit">Từ chối</button>
+                          </div>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
+                {% else %}
+                  <form method="post" action="{{ url_for('main.enroll_start') }}" class="d-flex gap-1">
+                    <input type="hidden" name="request_id" value="{{ registration_request.id }}">
+                    <input type="hidden" name="next" value="requests">
+                    <select class="form-select form-select-sm" name="gate" aria-label="Cổng cấp thẻ">
+                      <option value="in">Cổng vào</option>
+                      <option value="out">Cổng ra</option>
+                    </select>
+                    <button class="btn btn-primary btn-sm" type="submit">Cấp thẻ</button>
+                  </form>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="text-muted">Chưa có yêu cầu nào.</p>
+  {% endif %}
+  {% if enroll_state %}
+    <script>
+      (() => {
+        const expiry = new Date({{ enroll_state.expires_at|tojson }}).getTime();
+        const nodes = document.querySelectorAll('[data-enroll-countdown]');
+        const tick = () => {
+          const seconds = Math.max(0, Math.ceil((expiry - Date.now()) / 1000));
+          nodes.forEach((node) => { node.textContent = `${seconds}s`; });
+          if (seconds > 0) window.setTimeout(tick, 250);
+        };
+        tick();
+      })();
+    </script>
+  {% endif %}
+{% endblock %}

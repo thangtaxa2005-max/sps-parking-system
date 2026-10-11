@@ -1,0 +1,25 @@
+{% if events %}
+  <div class="table-responsive">
+    <table class="table table-striped align-middle">
+      <thead><tr>
+        <th>Thời gian</th><th>Biển đăng ký</th><th>Biển OCR</th>
+        <th>Cổng</th><th>Kết quả</th><th>Lý do</th><th>Ảnh</th>
+      </tr></thead>
+      <tbody>
+        {% for event in events %}
+          <tr>
+            <td>{{ event.ts | format_datetime }}</td>
+            <td>{{ event.plate or "—" }}</td>
+            <td>{{ event.ocr_plate or "—" }}</td>
+            <td>{{ event.gate }}</td>
+            <td>{{ event.result }}</td>
+            <td>{{ event.reason_code }}</td>
+            <td><a href="{{ url_for('main.event_image', filename=event.image_path | image_filename) }}" target="_blank" rel="noopener">Xem ảnh</a></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <p class="text-muted">Chưa có sự kiện kèm ảnh.</p>
+{% endif %}
