@@ -12,6 +12,7 @@ env/
 .pytest_*/
 .github-publish/
 .git-legacy/
+.git-legacy.bundle
 .coverage
 htmlcov/
 *.log
